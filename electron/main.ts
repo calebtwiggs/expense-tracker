@@ -1,10 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -65,15 +62,22 @@ function createWindow() {
     height: 800,
     minWidth: 900,
     minHeight: 600,
+    icon: path.join(app.getAppPath(), 'build', 'icon.png'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(app.getAppPath(), 'electron', 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    autoHideMenuBar: true,
     backgroundColor: '#030712', // Dark background
     show: false,
   });
+
+  // Remove the menu bar entirely on Windows/Linux
+  if (process.platform !== 'darwin') {
+    mainWindow.setMenu(null);
+  }
 
   // Show window when ready to prevent flashing
   mainWindow.once('ready-to-show', () => {
@@ -85,7 +89,13 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // In production, the app structure is:
+    // app.asar/
+    //   ├── dist/           (Vite build output)
+    //   │   └── index.html
+    //   └── electron/       (compiled main.js, preload.js)
+    //       └── main.js     (__dirname points here)
+    mainWindow.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'));
   }
 
   mainWindow.on('closed', () => {

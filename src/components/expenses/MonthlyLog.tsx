@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, DollarSign, PiggyBank } from 'lucide-react';
+import { TrendingDown, DollarSign, PiggyBank } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useExpenseStore } from '@/stores/useExpenseStore';
 import { ExpenseList } from './ExpenseList';

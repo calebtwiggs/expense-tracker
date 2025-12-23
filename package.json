@@ -67,6 +67,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "fake-indexeddb": "^6.0.0",
     "globals": "^15.14.0",
+    "png-to-ico": "^3.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.6.2",
@@ -91,7 +92,8 @@
     "files": [
       "dist/**/*",
       "electron/**/*.js",
-      "!electron/**/*.ts"
+      "!electron/**/*.ts",
+      "build/icon.png"
     ],
     "extraMetadata": {
       "main": "electron/main.js"
@@ -112,15 +114,19 @@
           ]
         }
       ],
-      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
       "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Expense Tracker"
+      "shortcutName": "Expense Tracker",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
     },
     "mac": {
       "target": [

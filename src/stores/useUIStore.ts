@@ -16,7 +16,7 @@ interface UIState {
 
 export const useUIStore = create<UIState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       theme: 'dark',
       sidebarCollapsed: false,
       claudeApiKey: null,

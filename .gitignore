@@ -36,3 +36,12 @@ out/
 # Compiled Electron files
 electron/*.js
 electron/*.js.map
+
+# Build output
+build/
+
+# Windows null device artifact
+nul
+
+# Claude Code local settings
+.claude/settings.local.json

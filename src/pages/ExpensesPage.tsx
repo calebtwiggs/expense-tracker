@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -13,8 +12,6 @@ import {
 import { ExpenseForm } from '@/components/forms/ExpenseForm';
 import { MonthlyLog } from '@/components/expenses/MonthlyLog';
 import { SavingsAllocationModal } from '@/components/savings/SavingsAllocationModal';
-import { useExpenseStore } from '@/stores/useExpenseStore';
-import { useSavingsGoalStore } from '@/stores/useSavingsGoalStore';
 
 export function ExpensesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -28,22 +25,7 @@ export function ExpensesPage() {
     expenseId: '',
   });
 
-  const { addExpense } = useExpenseStore();
-  const { goals } = useSavingsGoalStore();
-
   const handleExpenseSuccess = async () => {
-    setIsFormOpen(false);
-  };
-
-  // Enhanced expense form that checks for savings category
-  const handleExpenseAdded = (expense: { id: string; amount: number; category: string }) => {
-    if (expense.category === 'savings' && goals.some((g) => g.status === 'active')) {
-      setAllocationModal({
-        isOpen: true,
-        amount: expense.amount,
-        expenseId: expense.id,
-      });
-    }
     setIsFormOpen(false);
   };
 
