@@ -14,7 +14,7 @@ export const fixedNotes: VersionFixed[] = [
   {
     version: '1.0.0',
     items: [
-      { description: 'Fixed an issue where it wasn't displaying the correct datefrom when it was first selected.' },
+      { description: "Fixed an issue where it wasn't displaying the correct date when it was first selected." },
     ],
   },
 ];
