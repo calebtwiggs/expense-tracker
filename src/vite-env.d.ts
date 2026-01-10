@@ -4,8 +4,9 @@ interface Window {
   electronAPI?: {
     // AI Tips
     getSpendingTips: (data: SpendingData) => Promise<AITipsResponse>;
-    setApiKey: (key: string) => Promise<void>;
+    setApiKey: (key: string) => Promise<{ success: boolean }>;
     getApiKey: () => Promise<string | null>;
+    hasApiKey: () => Promise<boolean>;
     // Auto-updater
     checkForUpdates: () => Promise<{ success: boolean; version?: string; message?: string }>;
     installUpdate: () => void;

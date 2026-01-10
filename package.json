@@ -1,7 +1,7 @@
 {
   "name": "expense-tracker",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -83,7 +83,8 @@
     "publish": {
       "provider": "github",
       "owner": "calebtwiggs",
-      "repo": "expense-tracker"
+      "repo": "expense-tracker",
+      "releaseType": "release"
     },
     "directories": {
       "output": "release",
@@ -93,7 +94,14 @@
       "dist/**/*",
       "electron/**/*.js",
       "!electron/**/*.ts",
-      "build/icon.png"
+      "build/icon.png",
+      "build/icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      }
     ],
     "extraMetadata": {
       "main": "electron/main.js"
@@ -114,16 +122,22 @@
           ]
         }
       ],
+      "icon": "build/icon.ico",
       "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
+      "menuCategory": false,
       "shortcutName": "Expense Tracker",
-      "artifactName": "${productName}-Setup-${version}.${ext}"
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "installerHeaderIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "include": "build/installer.nsh"
     },
     "portable": {
       "artifactName": "${productName}-Portable-${version}.${ext}"

@@ -6,12 +6,14 @@ type Theme = 'light' | 'dark' | 'system';
 interface UIState {
   theme: Theme;
   sidebarCollapsed: boolean;
-  claudeApiKey: string | null;
+  // API key is now stored securely via Electron's safeStorage
+  // This is just a flag to indicate if an API key is configured
+  hasApiKey: boolean;
 
   // Actions
   setTheme: (theme: Theme) => void;
   toggleSidebar: () => void;
-  setClaudeApiKey: (key: string | null) => void;
+  setHasApiKey: (hasKey: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -19,7 +21,7 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       theme: 'dark',
       sidebarCollapsed: false,
-      claudeApiKey: null,
+      hasApiKey: false,
 
       setTheme: (theme: Theme) => {
         set({ theme });
@@ -42,8 +44,8 @@ export const useUIStore = create<UIState>()(
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }));
       },
 
-      setClaudeApiKey: (key: string | null) => {
-        set({ claudeApiKey: key });
+      setHasApiKey: (hasKey: boolean) => {
+        set({ hasApiKey: hasKey });
       },
     }),
     {
@@ -51,8 +53,8 @@ export const useUIStore = create<UIState>()(
       partialize: (state) => ({
         theme: state.theme,
         sidebarCollapsed: state.sidebarCollapsed,
-        // Note: API key is stored but should ideally be encrypted
-        claudeApiKey: state.claudeApiKey,
+        // API key is NO LONGER stored in localStorage - only a flag
+        hasApiKey: state.hasApiKey,
       }),
     }
   )

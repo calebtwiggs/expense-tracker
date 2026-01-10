@@ -37,11 +37,21 @@ out/
 electron/*.js
 electron/*.js.map
 
-# Build output
-build/
+# Build output (but keep build resources for electron-builder)
+# build/ - commented out: we need to track icon.ico, icon.png, installer.nsh
 
 # Windows null device artifact
 nul
 
 # Claude Code local settings
 .claude/settings.local.json
+CLAUDE.md
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Windows artifacts
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak

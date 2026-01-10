@@ -32,6 +32,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getApiKey: (): Promise<string | null> =>
     ipcRenderer.invoke('get-api-key'),
 
+  hasApiKey: (): Promise<boolean> =>
+    ipcRenderer.invoke('has-api-key'),
+
   // Auto-updater
   checkForUpdates: (): Promise<{ success: boolean; version?: string; message?: string }> =>
     ipcRenderer.invoke('check-for-updates'),

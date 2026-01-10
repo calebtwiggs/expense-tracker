@@ -36,13 +36,23 @@ export function Header({ title, showMonthSelector = false }: HeaderProps) {
 
         {showMonthSelector && (
           <div className="flex items-center gap-2 ml-4">
-            <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePrevMonth}
+              aria-label="Previous month"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="min-w-[140px] text-center font-medium">
               {format(currentDate, 'MMMM yyyy')}
             </span>
-            <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleNextMonth}
+              aria-label="Next month"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -50,7 +60,12 @@ export function Header({ title, showMonthSelector = false }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
           {theme === 'dark' ? (
             <Sun className="h-5 w-5" />
           ) : (

@@ -1,4 +1,4 @@
-import { differenceInMonths, addMonths } from 'date-fns';
+import { differenceInMonths, addMonths, startOfMonth } from 'date-fns';
 import { SavingsGoal } from '@/types';
 
 export function calculateRequiredMonthlySavings(goal: SavingsGoal): number {
@@ -7,11 +7,18 @@ export function calculateRequiredMonthlySavings(goal: SavingsGoal): number {
   const remaining = goal.targetAmount - goal.currentAmount;
   if (remaining <= 0) return 0;
 
-  // Exclude the current month from calculation (savings start next month)
-  const monthsLeft = differenceInMonths(goal.targetDate, new Date());
-  if (monthsLeft <= 0) return remaining;
+  // Calculate months available to save, starting from next month through the target month
+  // We use startOfMonth to get consistent month boundaries
+  const nextMonth = startOfMonth(addMonths(new Date(), 1));
+  const targetMonth = startOfMonth(new Date(goal.targetDate));
 
-  return Math.ceil(remaining / monthsLeft);
+  // Add 1 because we want to include the target month as a saving month
+  // e.g., if today is Dec 2025 and target is June 2026, we have Jan-June = 6 months
+  const monthsToSave = differenceInMonths(targetMonth, nextMonth) + 1;
+
+  if (monthsToSave <= 0) return remaining;
+
+  return Math.ceil(remaining / monthsToSave);
 }
 
 export function calculateProjectedCompletionDate(

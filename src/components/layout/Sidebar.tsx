@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { AddSavingsModal } from '@/components/savings/AddSavingsModal';
+import { PatchNotesPopover } from '@/components/PatchNotesPopover';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -80,6 +81,7 @@ export function Sidebar() {
           <p>Expense Tracker v1.0</p>
           <p>Developed by: Caleb Twiggs</p>
           <p>Beta Version</p>
+          <PatchNotesPopover currentVersion="1.0.0" />
         </div>
       </div>
     </aside>

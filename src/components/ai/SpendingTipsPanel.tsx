@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw, AlertCircle, Lightbulb } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,19 @@ export function SpendingTipsPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
 
   const { expenses, getCategoryTotals, getMonthlyTrend, budgetLimit } =
     useExpenseStore();
   const { goals } = useSavingsGoalStore();
-  const { claudeApiKey } = useUIStore();
+  const { hasApiKey } = useUIStore();
+
+  // Check if API key is configured
+  useEffect(() => {
+    if (window.electronAPI?.hasApiKey) {
+      window.electronAPI.hasApiKey().then(setApiKeyConfigured);
+    }
+  }, [hasApiKey]);
 
   const fetchTips = async () => {
     if (!window.electronAPI) {
@@ -24,7 +32,7 @@ export function SpendingTipsPanel() {
       return;
     }
 
-    if (!claudeApiKey) {
+    if (!apiKeyConfigured) {
       setError('Please configure your Claude API key in Settings.');
       return;
     }

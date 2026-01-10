@@ -1,9 +1,57 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, safeStorage } from 'electron';
 import pkg from 'electron-updater';
 const { autoUpdater } = pkg;
 import path from 'path';
+import fs from 'fs';
 
 let mainWindow: BrowserWindow | null = null;
+
+// Secure API key storage
+const API_KEY_FILE = path.join(app.getPath('userData'), 'secure-api-key');
+
+function saveApiKeySecurely(apiKey: string): boolean {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      console.warn('Encryption not available, storing key without encryption');
+      fs.writeFileSync(API_KEY_FILE, apiKey, 'utf-8');
+      return true;
+    }
+    const encrypted = safeStorage.encryptString(apiKey);
+    fs.writeFileSync(API_KEY_FILE, encrypted);
+    return true;
+  } catch (error) {
+    console.error('Failed to save API key:', error);
+    return false;
+  }
+}
+
+function loadApiKeySecurely(): string | null {
+  try {
+    if (!fs.existsSync(API_KEY_FILE)) {
+      return null;
+    }
+    const data = fs.readFileSync(API_KEY_FILE);
+    if (!safeStorage.isEncryptionAvailable()) {
+      return data.toString('utf-8');
+    }
+    return safeStorage.decryptString(data);
+  } catch (error) {
+    console.error('Failed to load API key:', error);
+    return null;
+  }
+}
+
+function deleteApiKey(): boolean {
+  try {
+    if (fs.existsSync(API_KEY_FILE)) {
+      fs.unlinkSync(API_KEY_FILE);
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to delete API key:', error);
+    return false;
+  }
+}
 
 // Auto-updater configuration
 autoUpdater.autoDownload = true;
@@ -142,16 +190,22 @@ app.on('window-all-closed', () => {
   }
 });
 
-// IPC Handlers for Claude API
-let claudeApiKey: string | null = null;
-
+// IPC Handlers for Claude API (using secure storage)
 ipcMain.handle('set-api-key', async (_event, key: string) => {
-  claudeApiKey = key;
-  return { success: true };
+  if (!key) {
+    const deleted = deleteApiKey();
+    return { success: deleted };
+  }
+  const saved = saveApiKeySecurely(key);
+  return { success: saved };
 });
 
 ipcMain.handle('get-api-key', async () => {
-  return claudeApiKey;
+  return loadApiKeySecurely();
+});
+
+ipcMain.handle('has-api-key', async () => {
+  return loadApiKeySecurely() !== null;
 });
 
 interface SpendingData {
@@ -163,7 +217,8 @@ interface SpendingData {
 }
 
 ipcMain.handle('get-spending-tips', async (_event, data: SpendingData) => {
-  if (!claudeApiKey) {
+  const apiKey = loadApiKeySecurely();
+  if (!apiKey) {
     return {
       success: false,
       error: 'Claude API key not configured. Please add your API key in Settings.',
@@ -173,7 +228,7 @@ ipcMain.handle('get-spending-tips', async (_event, data: SpendingData) => {
   try {
     // Dynamic import for Anthropic SDK
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const anthropic = new Anthropic({ apiKey: claudeApiKey });
+    const anthropic = new Anthropic({ apiKey });
 
     const totalSpending = Object.entries(data.categoryTotals)
       .filter(([cat]) => cat !== 'savings')

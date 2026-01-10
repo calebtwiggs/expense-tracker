@@ -1,23 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Key, Moon, Sun, DollarSign, Trash2, RefreshCw, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Eye, EyeOff, Key, Moon, Sun, DollarSign, Trash2, RefreshCw, Download, CheckCircle2, AlertCircle, Upload, FileJson, FileSpreadsheet } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { PatchNotesPopover } from '@/components/PatchNotesPopover';
 import { useUIStore } from '@/stores/useUIStore';
 import { useExpenseStore } from '@/stores/useExpenseStore';
 import { db } from '@/db/database';
+import { toast } from '@/hooks/useToast';
+import { exportAllData, downloadAsJson, downloadAsCsv, importData } from '@/lib/exportData';
 
 export function SettingsPage() {
-  const { theme, setTheme, claudeApiKey, setClaudeApiKey } = useUIStore();
+  const { theme, setTheme, hasApiKey, setHasApiKey } = useUIStore();
   const { budgetLimit, setBudgetLimit } = useExpenseStore();
 
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [budgetInput, setBudgetInput] = useState(budgetLimit?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [showClearDataDialog, setShowClearDataDialog] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update state
   const [appVersion, setAppVersion] = useState('1.0.0');
@@ -30,6 +39,11 @@ export function SettingsPage() {
       window.electronAPI.getAppVersion().then(setAppVersion);
     }
 
+    // Check if API key is configured (securely stored)
+    if (window.electronAPI?.hasApiKey) {
+      window.electronAPI.hasApiKey().then(setHasApiKey);
+    }
+
     // Listen for update status changes
     if (window.electronAPI?.onUpdateStatus) {
       const cleanup = window.electronAPI.onUpdateStatus((status) => {
@@ -40,7 +54,7 @@ export function SettingsPage() {
       });
       return cleanup;
     }
-  }, []);
+  }, [setHasApiKey]);
 
   const handleCheckUpdates = async () => {
     if (!window.electronAPI?.checkForUpdates) return;
@@ -58,20 +72,44 @@ export function SettingsPage() {
   const handleSaveApiKey = async () => {
     setIsSaving(true);
     try {
-      setClaudeApiKey(apiKeyInput);
       if (window.electronAPI) {
-        await window.electronAPI.setApiKey(apiKeyInput);
+        const result = await window.electronAPI.setApiKey(apiKeyInput);
+        if (result.success) {
+          setHasApiKey(true);
+          setApiKeyInput('');
+          toast({
+            title: 'API key saved',
+            description: 'Your Claude API key has been securely stored.',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Failed to save API key.',
+            variant: 'destructive',
+          });
+        }
       }
-      setApiKeyInput('');
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to save API key.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleRemoveApiKey = () => {
-    setClaudeApiKey(null);
+  const handleRemoveApiKey = async () => {
     if (window.electronAPI) {
-      window.electronAPI.setApiKey('');
+      const result = await window.electronAPI.setApiKey('');
+      if (result.success) {
+        setHasApiKey(false);
+        toast({
+          title: 'API key removed',
+          description: 'Your Claude API key has been deleted.',
+        });
+      }
     }
   };
 
@@ -84,17 +122,101 @@ export function SettingsPage() {
     }
   };
 
+  const handleExportJson = async () => {
+    setIsExporting(true);
+    try {
+      const data = await exportAllData();
+      downloadAsJson(data);
+      toast({
+        title: 'Export successful',
+        description: 'Your data has been downloaded as JSON.',
+      });
+    } catch {
+      toast({
+        title: 'Export failed',
+        description: 'Could not export your data. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const data = await exportAllData();
+      downloadAsCsv(data);
+      toast({
+        title: 'Export successful',
+        description: 'Your expenses have been downloaded as CSV.',
+      });
+    } catch {
+      toast({
+        title: 'Export failed',
+        description: 'Could not export your data. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const result = await importData(file);
+      if (result.success) {
+        toast({
+          title: 'Import successful',
+          description: result.message + '. Reloading...',
+        });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast({
+          title: 'Import failed',
+          description: result.message,
+          variant: 'destructive',
+        });
+        setIsImporting(false);
+      }
+    } catch {
+      toast({
+        title: 'Import failed',
+        description: 'Could not read the backup file.',
+        variant: 'destructive',
+      });
+      setIsImporting(false);
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleClearData = async () => {
-    if (
-      window.confirm(
-        'Are you sure you want to delete ALL data? This cannot be undone.'
-      )
-    ) {
+    setIsClearing(true);
+    try {
       await db.expenses.clear();
       await db.savingsGoals.clear();
       await db.savingsContributions.clear();
       await db.monthlyRecords.clear();
-      window.location.reload();
+      toast({
+        title: 'Data cleared',
+        description: 'All your data has been deleted. Reloading...',
+      });
+      setTimeout(() => window.location.reload(), 1000);
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to clear data. Please try again.',
+        variant: 'destructive',
+      });
+      setIsClearing(false);
+      setShowClearDataDialog(false);
     }
   };
 
@@ -194,13 +316,13 @@ export function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {claudeApiKey ? (
+            {hasApiKey ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div>
                     <p className="text-sm font-medium">API Key Configured</p>
                     <p className="text-xs text-muted-foreground">
-                      Key ending in ...{claudeApiKey.slice(-8)}
+                      Securely stored in system keychain
                     </p>
                   </div>
                   <Button
@@ -241,24 +363,94 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Export & Backup */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Export & Backup
+            </CardTitle>
+            <CardDescription>
+              Export your data for backup or use in other applications.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={handleExportJson}
+                disabled={isExporting}
+              >
+                <FileJson className="h-4 w-4 mr-2" />
+                Export as JSON
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExportCsv}
+                disabled={isExporting}
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export Expenses as CSV
+              </Button>
+            </div>
+            <div className="pt-4 border-t">
+              <Label htmlFor="import-file" className="text-sm font-medium">
+                Restore from Backup
+              </Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Import a previously exported JSON backup file.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  ref={fileInputRef}
+                  id="import-file"
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  disabled={isImporting}
+                  className="max-w-xs"
+                />
+                {isImporting && (
+                  <span className="text-sm text-muted-foreground flex items-center">
+                    <Upload className="h-4 w-4 mr-1 animate-pulse" />
+                    Importing...
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Data Management */}
         <Card className="border-destructive/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="h-5 w-5" />
-              Data Management
+              Danger Zone
             </CardTitle>
             <CardDescription>
-              Manage your stored data. These actions cannot be undone.
+              Irreversible actions. Please be careful.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="destructive" onClick={handleClearData}>
+            <Button variant="destructive" onClick={() => setShowClearDataDialog(true)}>
               <Trash2 className="h-4 w-4 mr-2" />
               Clear All Data
             </Button>
           </CardContent>
         </Card>
+
+        <ConfirmDialog
+          open={showClearDataDialog}
+          onOpenChange={setShowClearDataDialog}
+          title="Delete All Data"
+          description="Are you sure you want to delete ALL your data? This includes all expenses, savings goals, and contribution history. This action cannot be undone."
+          confirmLabel="Delete Everything"
+          cancelLabel="Cancel"
+          variant="destructive"
+          onConfirm={handleClearData}
+          isLoading={isClearing}
+        />
 
         {/* About & Updates */}
         <Card>
@@ -276,8 +468,9 @@ export function SettingsPage() {
               <div>
                 <p className="font-medium">Expense Tracker</p>
                 <p className="text-sm text-muted-foreground">
-                  Version {appVersion}
+                  Version {appVersion} (Beta)
                 </p>
+                <PatchNotesPopover currentVersion={appVersion} />
               </div>
               {window.electronAPI && (
                 <Button

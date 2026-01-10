@@ -31,6 +31,9 @@ export interface SavingsGoal {
   category?: EventGoalCategory;
   targetDate?: Date;
   priority?: 'low' | 'medium' | 'high';
+
+  // Fixed monthly savings amount calculated at goal creation (does not change with contributions)
+  requiredMonthlySavings?: number;
 }
 
 export interface SavingsContribution {

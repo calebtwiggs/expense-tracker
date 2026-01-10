@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Receipt } from 'lucide-react';
 import { useExpenseStore } from '@/stores/useExpenseStore';
 import { ExpenseCard } from './ExpenseCard';
@@ -61,7 +61,7 @@ export function ExpenseList() {
       {sortedDates.map((dateKey) => (
         <div key={dateKey} className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground px-1">
-            {format(new Date(dateKey), 'EEEE, MMMM d')}
+            {format(parseISO(dateKey), 'EEEE, MMMM d')}
           </h3>
           <div className="space-y-2">
             {groupedExpenses[dateKey].map((expense) => (

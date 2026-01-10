@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { format, differenceInDays } from 'date-fns';
 import { Trash2, Pause, Play, Check, Target, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { GoalProgressBar } from './GoalProgressBar';
 import { SavingsGoal, EVENT_CATEGORY_LABELS } from '@/types';
 import { useSavingsGoalStore } from '@/stores/useSavingsGoalStore';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from '@/hooks/useToast';
 
 interface SavingsGoalCardProps {
   goal: SavingsGoal;
@@ -14,6 +17,8 @@ interface SavingsGoalCardProps {
 export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
   const { updateGoal, deleteGoal, getRequiredMonthlySavings } =
     useSavingsGoalStore();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const requiredMonthly = getRequiredMonthlySavings(goal.id);
   const daysRemaining = goal.targetDate
@@ -21,19 +26,58 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
     : null;
 
   const handleToggleStatus = async () => {
-    await updateGoal(goal.id, {
-      status: goal.status === 'active' ? 'paused' : 'active',
-    });
+    try {
+      await updateGoal(goal.id, {
+        status: goal.status === 'active' ? 'paused' : 'active',
+      });
+      toast({
+        title: goal.status === 'active' ? 'Goal paused' : 'Goal resumed',
+        description: `"${goal.name}" has been ${goal.status === 'active' ? 'paused' : 'resumed'}.`,
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to update goal status.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this goal?')) {
+    setIsDeleting(true);
+    try {
       await deleteGoal(goal.id);
+      toast({
+        title: 'Goal deleted',
+        description: `"${goal.name}" has been removed.`,
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete goal. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
   const handleComplete = async () => {
-    await updateGoal(goal.id, { status: 'completed' });
+    try {
+      await updateGoal(goal.id, { status: 'completed' });
+      toast({
+        title: 'Goal completed!',
+        description: `Congratulations! You've reached your "${goal.name}" goal.`,
+        variant: 'success',
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to mark goal as complete.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const isCompleted = goal.status === 'completed';
@@ -61,7 +105,7 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
               variant="ghost"
               size="icon"
               onClick={handleToggleStatus}
-              title={isPaused ? 'Resume' : 'Pause'}
+              aria-label={isPaused ? 'Resume goal' : 'Pause goal'}
             >
               {isPaused ? (
                 <Play className="h-4 w-4" />
@@ -74,7 +118,8 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-destructive"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteDialog(true)}
+            aria-label="Delete goal"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -138,6 +183,18 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
             </Button>
           )}
       </CardContent>
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Savings Goal"
+        description={`Are you sure you want to delete "${goal.name}"? All contribution history for this goal will also be removed.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+      />
     </Card>
   );
 }

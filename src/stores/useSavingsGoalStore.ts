@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { differenceInMonths } from 'date-fns';
+import { differenceInMonths, startOfMonth, addMonths } from 'date-fns';
 import { db } from '@/db/database';
 import { SavingsGoal, SavingsContribution } from '@/types';
 
@@ -48,11 +48,28 @@ export const useSavingsGoalStore = create<SavingsGoalState>((set, get) => ({
   createGoal: async (goalData) => {
     try {
       const now = new Date();
+
+      // Calculate and store the fixed required monthly savings for event goals
+      let requiredMonthlySavings: number | undefined;
+      if (goalData.type === 'event' && goalData.targetDate) {
+        // Calculate months from next month through the target month
+        const nextMonth = startOfMonth(addMonths(now, 1));
+        const targetMonth = startOfMonth(new Date(goalData.targetDate));
+        const monthsToSave = differenceInMonths(targetMonth, nextMonth) + 1;
+
+        if (monthsToSave > 0) {
+          requiredMonthlySavings = Math.ceil(goalData.targetAmount / monthsToSave);
+        } else {
+          requiredMonthlySavings = goalData.targetAmount;
+        }
+      }
+
       const newGoal: SavingsGoal = {
         ...goalData,
         id: uuidv4(),
         createdAt: now,
         updatedAt: now,
+        requiredMonthlySavings,
       };
 
       await db.savingsGoals.add(newGoal);
@@ -200,16 +217,26 @@ export const useSavingsGoalStore = create<SavingsGoalState>((set, get) => ({
 
   getRequiredMonthlySavings: (goalId: string) => {
     const goal = get().goals.find((g) => g.id === goalId);
-    if (!goal || !goal.targetDate) return 0;
+    if (!goal) return 0;
 
-    const remaining = goal.targetAmount - goal.currentAmount;
-    if (remaining <= 0) return 0;
+    // If goal is already reached, no monthly savings needed
+    if (goal.currentAmount >= goal.targetAmount) return 0;
 
-    // Exclude the current month from calculation (savings start next month)
-    const monthsLeft = differenceInMonths(goal.targetDate, new Date());
-    if (monthsLeft <= 0) return remaining;
+    // Return the stored fixed value (calculated at goal creation)
+    // This ensures the amount never changes as contributions are added
+    if (goal.requiredMonthlySavings !== undefined) {
+      return goal.requiredMonthlySavings;
+    }
 
-    return Math.ceil(remaining / monthsLeft);
+    // Fallback for existing goals without stored value: calculate it now
+    if (!goal.targetDate) return 0;
+
+    const nextMonth = startOfMonth(addMonths(new Date(), 1));
+    const targetMonth = startOfMonth(new Date(goal.targetDate));
+    const monthsToSave = differenceInMonths(targetMonth, nextMonth) + 1;
+
+    if (monthsToSave <= 0) return goal.targetAmount;
+    return Math.ceil(goal.targetAmount / monthsToSave);
   },
 
   getActiveGoals: () => {

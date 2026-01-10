@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -16,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useExpenseStore } from '@/stores/useExpenseStore';
 import { EXPENSE_CATEGORIES, CATEGORY_LABELS, ExpenseCategory } from '@/types';
+import { cn } from '@/lib/utils';
 
 const expenseSchema = z.object({
   amount: z.number().positive('Amount must be positive'),
@@ -32,6 +36,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const { addExpense } = useExpenseStore();
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const {
     register,
@@ -49,6 +54,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   });
 
   const selectedCategory = watch('category');
+  const selectedDate = watch('date');
 
   const onSubmit = async (data: ExpenseFormData) => {
     try {
@@ -56,7 +62,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         amount: data.amount,
         category: data.category as ExpenseCategory,
         description: data.description,
-        date: new Date(data.date),
+        date: new Date(data.date + 'T00:00:00'),
       });
       reset({
         amount: undefined,
@@ -96,10 +102,34 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
         <div className="space-y-2">
           <Label htmlFor="date">Date</Label>
-          <div className="relative">
-            <Input id="date" type="date" {...register('date')} />
-            <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          </div>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !selectedDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(new Date(selectedDate + 'T00:00:00'), 'PPP') : 'Pick a date'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate ? new Date(selectedDate + 'T00:00:00') : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    setValue('date', format(date, 'yyyy-MM-dd'));
+                  }
+                  setCalendarOpen(false);
+                }}
+                disableFuture
+                autoFocus
+              />
+            </PopoverContent>
+          </Popover>
           {errors.date && (
             <p className="text-destructive text-sm">{errors.date.message}</p>
           )}
