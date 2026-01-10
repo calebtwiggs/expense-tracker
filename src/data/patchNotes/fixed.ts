@@ -12,6 +12,13 @@ export interface VersionFixed {
 
 export const fixedNotes: VersionFixed[] = [
   {
+    version: '1.2.0',
+    items: [
+      { description: 'Resolved date selection issue where expenses would display the previous day instead of the selected date' },
+      { description: 'AI Insights now correctly renders within the desktop application instead of opening in a browser window' },
+    ],
+  },
+  {
     version: '1.0.0',
     items: [
       { description: "Fixed an issue where it wasn't displaying the correct date when it was first selected." },

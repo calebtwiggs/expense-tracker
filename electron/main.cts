@@ -1,6 +1,5 @@
-import { app, BrowserWindow, ipcMain, safeStorage } from 'electron';
-import pkg from 'electron-updater';
-const { autoUpdater } = pkg;
+import { app, BrowserWindow, ipcMain, safeStorage, dialog } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import fs from 'fs';
 
@@ -73,6 +72,15 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-available', (info) => {
     sendUpdateStatus('available', `Update v${info.version} available!`);
+
+    // Show native dialog to notify user
+    dialog.showMessageBox(mainWindow!, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version (v${info.version}) is available!`,
+      detail: 'The update is being downloaded in the background. You will be notified when it is ready to install.',
+      buttons: ['OK'],
+    });
   });
 
   autoUpdater.on('update-not-available', () => {
@@ -91,10 +99,36 @@ function setupAutoUpdater() {
     sendUpdateStatus('downloaded', `Update v${info.version} ready to install`, {
       version: info.version,
     });
+
+    // Show native dialog prompting user to restart
+    dialog.showMessageBox(mainWindow!, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `Version ${info.version} has been downloaded`,
+      detail: 'The update will be installed when you restart the application. Would you like to restart now?',
+      buttons: ['Restart Now', 'Later'],
+      defaultId: 0,
+      cancelId: 1,
+    }).then((result) => {
+      if (result.response === 0) {
+        // User clicked "Restart Now"
+        autoUpdater.quitAndInstall(false, true);
+      }
+    });
   });
 
   autoUpdater.on('error', (error) => {
     sendUpdateStatus('error', `Update error: ${error.message}`);
+    console.error('Auto-updater error:', error);
+
+    // Show error dialog so user knows something went wrong
+    dialog.showMessageBox(mainWindow!, {
+      type: 'error',
+      title: 'Update Error',
+      message: 'Failed to check for updates',
+      detail: error.message,
+      buttons: ['OK'],
+    });
   });
 }
 
@@ -112,7 +146,7 @@ function createWindow() {
     minHeight: 600,
     icon: path.join(app.getAppPath(), 'build', 'icon.png'),
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'electron', 'preload.js'),
+      preload: path.join(app.getAppPath(), 'electron', 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },

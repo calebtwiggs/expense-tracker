@@ -1,16 +1,16 @@
 {
   "name": "expense-tracker",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:compile": "tsc -p tsconfig.electron.json",
-    "electron:dev": "npm run electron:compile && concurrently \"vite\" \"wait-on http://localhost:5173 && NODE_ENV=development electron .\"",
+    "electron:dev": "npm run electron:compile && concurrently \"vite\" \"wait-on http://localhost:5173 && set NODE_ENV=development&& electron .\"",
     "electron:build": "npm run electron:compile && vite build && electron-builder",
     "electron:build:win": "npm run electron:compile && vite build && electron-builder --win",
     "electron:build:mac": "npm run electron:compile && vite build && electron-builder --mac",
@@ -92,8 +92,8 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*.js",
-      "!electron/**/*.ts",
+      "electron/**/*.cjs",
+      "!electron/**/*.cts",
       "build/icon.png",
       "build/icon.ico"
     ],
@@ -104,7 +104,7 @@
       }
     ],
     "extraMetadata": {
-      "main": "electron/main.js"
+      "main": "electron/main.cjs"
     },
     "asar": true,
     "win": {

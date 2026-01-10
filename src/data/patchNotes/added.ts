@@ -12,6 +12,13 @@ export interface VersionAdded {
 
 export const addedNotes: VersionAdded[] = [
   {
+    version: '1.2.0',
+    items: [
+      { description: 'Premium Features tab with AI Tips, Automation, and Insights pages' },
+      { description: 'Calendar popup for improved date selection when adding expenses' },
+    ],
+  },
+  {
     version: '1.0.0',
     items: [
       { description: 'Initial release of expense tracker' },

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import { CategoryPieChart } from '@/components/charts/CategoryPieChart';
 import { SpendingTrendChart } from '@/components/charts/SpendingTrendChart';
-import { SpendingTipsPanel } from '@/components/ai/SpendingTipsPanel';
 import { Button } from '@/components/ui/button';
 import { useExpenseStore } from '@/stores/useExpenseStore';
 import { useSavingsGoalStore } from '@/stores/useSavingsGoalStore';
@@ -175,9 +174,6 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* AI Tips */}
-        <SpendingTipsPanel />
       </div>
     </div>
   );

@@ -48,9 +48,9 @@ export function CategoryPieChart() {
         <Pie
           data={data}
           cx="50%"
-          cy="50%"
+          cy="45%"
           innerRadius={60}
-          outerRadius={100}
+          outerRadius={95}
           paddingAngle={2}
           dataKey="value"
           label={({ name, percent }) =>

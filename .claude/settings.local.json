@@ -45,7 +45,12 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nRelease v1.1.0 - New features and improvements\n\n- Add patch notes system with popover display\n- Add calendar component for date picking\n- Add confirmation dialogs for destructive actions\n- Add toast notifications system\n- Add data export functionality\n- Add error boundary for better error handling\n- Improve settings page with expanded options\n- Enhance savings goal cards with additional features\n- Update expense form and card components\n- Add auto-updater support in Electron\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(npm run electron:publish:win:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh auth:*)",
+      "Bash(npm run electron:build:win:*)",
+      "Bash(ls:*)",
+      "Bash(gh release create:*)",
+      "Bash(ren:*)"
     ]
   }
 }
